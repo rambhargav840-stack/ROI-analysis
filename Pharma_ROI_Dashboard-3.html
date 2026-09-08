@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharma Omnichannel ROI Analytics Dashboard | Capstone Analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-dark: #0d5c56;
+      --accent: #f59e0b;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+      color: white;
+      padding: 1.75rem 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+    .header p { opacity: 0.9; font-size: 0.95rem; margin-top: 0.35rem; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 1.5rem; }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .kpi-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
+      transition: transform 0.15s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 0.25rem; }
+    .kpi-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.15rem; }
+    .neg { color: var(--danger); }
+    .pos { color: var(--success); }
+    .warn { color: var(--accent); }
+    .section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border: 1px solid var(--border);
+    }
+    .section h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .section h2::before {
+      content: '';
+      width: 4px;
+      height: 1.2rem;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    th, td { padding: 0.65rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f1f5f9; font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    tr:hover { background: #f8fafc; }
+    .chart-container { position: relative; height: 280px; }
+    .insight-box {
+      background: #ecfdf5;
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .insight-box.warn-box { background: #fffbeb; border-left-color: var(--accent); }
+    .insight-box.danger-box { background: #fef2f2; border-left-color: var(--danger); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .rec-list { list-style: none; }
+    .rec-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .rec-list li:last-child { border-bottom: none; }
+    .rec-num {
+      background: var(--primary);
+      color: white;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Pharma Omnichannel Launch ROI Dashboard</h1>
+    <p>Data Cleaning · Marketing ROI · Channel Attribution · Budget Reallocation Recommendations | Analysis Period: Jan–Dec 2024 | 494 Unique HCPs</p>
+  </div>
+
+  <div class="container">
+    <!-- KPI Strip -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Marketing Investment</div>
+        <div class="kpi-value">₹11.11 Cr</div>
+        <div class="kpi-sub">Across 494 HCPs</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Gross Incremental Revenue</div>
+        <div class="kpi-value">₹21.35 L</div>
+        <div class="kpi-sub">From +5.0 avg ΔTRx</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Net Incremental Profit (NIPL)</div>
+        <div class="kpi-value neg">–₹10.89 Cr</div>
+        <div class="kpi-sub">Deeply negative</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Overall ROMI</div>
+        <div class="kpi-value neg">–98.1%</div>
+        <div class="kpi-sub">ROAS 0.02×</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Avg Incremental TRx</div>
+        <div class="kpi-value warn">+5.0</div>
+        <div class="kpi-sub">Pre 45.4 → Post 50.4</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Cost per Incr. Rx (CPRx)</div>
+        <div class="kpi-value">₹44,900</div>
+        <div class="kpi-sub">Median ≈ ₹45k</div>
+      </div>
+    </div>
+
+    <!-- Critical Insight -->
+    <div class="insight-box danger-box">
+      <strong>Critical Finding:</strong> Doctor Conference Sponsorship alone accounts for <strong>₹8.33 Cr (75% of TMI)</strong>. 
+      This single cost line is the primary driver of the –98% ROMI. Without conference spend, estimated ROMI would improve dramatically 
+      (remaining spend ≈ ₹2.78 Cr; GIR ₹21.4 L → still negative but far less severe). Average brand revenue per TRx (₹550–1600) cannot amortize high conference costs at observed lift levels.
+    </div>
+
+    <!-- Spend Mix + Specialty -->
+    <div class="grid-2">
+      <div class="section">
+        <h2>Investment Mix by Channel</h2>
+        <div class="chart-container">
+          <canvas id="spendChart"></canvas>
+        </div>
+        <div class="insight-box" style="margin-top:1rem">
+          Conference Sponsorship is an order of magnitude larger than any other channel. Digital CME + Sampling + Chemist POB combined are only ~16% of total spend.
+        </div>
+      </div>
+      <div class="section">
+        <h2>ROI by Specialty</h2>
+        <div class="chart-container">
+          <canvas id="specChart"></canvas>
+        </div>
+        <table style="margin-top:1rem">
+          <thead>
+            <tr><th>Specialty</th><th>HCPs</th><th>Avg ΔTRx</th><th>ROMI</th><th>ROAS</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Neurology</td><td>86</td><td>+6.1</td><td class="neg">–97.8%</td><td>0.022×</td></tr>
+            <tr><td>Pulmonology</td><td>65</td><td>+5.7</td><td class="neg">–97.8%</td><td>0.022×</td></tr>
+            <tr><td>Consulting Physician</td><td>12</td><td>+5.9</td><td class="neg">–98.2%</td><td>0.018×</td></tr>
+            <tr><td>Diabetology/Endo</td><td>111</td><td>+4.7</td><td class="neg">–98.2%</td><td>0.018×</td></tr>
+            <tr><td>Cardiology</td><td>129</td><td>+4.4</td><td class="neg">–98.3%</td><td>0.017×</td></tr>
+            <tr><td>General Practice</td><td>91</td><td>+4.6</td><td class="neg">–98.1%</td><td>0.019×</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Territory + Channel Lift -->
+    <div class="grid-2">
+      <div class="section">
+        <h2>Performance by Territory Tier</h2>
+        <table>
+          <thead>
+            <tr><th>Territory</th><th>HCPs</th><th>TMI (₹ Cr)</th><th>Avg ΔTRx</th><th>ROMI</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Rural</td><td>45</td><td>0.96</td><td><strong>+5.8</strong></td><td class="neg">–97.5%</td></tr>
+            <tr><td>Tier-2</td><td>88</td><td>2.01</td><td>+5.6</td><td class="neg">–97.9%</td></tr>
+            <tr><td>Tier-1</td><td>150</td><td>3.37</td><td>+4.7</td><td class="neg">–98.1%</td></tr>
+            <tr><td>Metro</td><td>211</td><td>4.77</td><td>+4.8</td><td class="neg">–98.3%</td></tr>
+          </tbody>
+        </table>
+        <div class="insight-box" style="margin-top:1rem">
+          Rural and Tier-2 HCPs show modestly higher incremental TRx lift. Metro absorbs the largest absolute spend with the weakest relative response.
+        </div>
+      </div>
+      <div class="section">
+        <h2>Channel Presence vs Incremental Lift</h2>
+        <table>
+          <thead>
+            <tr><th>Channel</th><th>Participation</th><th>ΔTRx With</th><th>ΔTRx Without</th><th>Lift</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Chemist POB Discount</td><td>32.6%</td><td>5.4</td><td>4.8</td><td class="pos">+0.6</td></tr>
+            <tr><td>Advisory Board</td><td>10.3%</td><td>5.7</td><td>4.9</td><td class="pos">+0.8</td></tr>
+            <tr><td>WhatsApp Tele-detailing</td><td>75.3%</td><td>4.8</td><td>5.6</td><td class="neg">–0.8</td></tr>
+            <tr><td>Digital CME Webinar</td><td>83.4%</td><td>4.6</td><td>6.9</td><td class="neg">–2.3</td></tr>
+            <tr><td>Sampling Kits</td><td>97.2%</td><td>5.0</td><td>6.9</td><td class="neg">–1.9</td></tr>
+            <tr><td>MR Detailing</td><td>100%</td><td>—</td><td>—</td><td>Baseline</td></tr>
+          </tbody>
+        </table>
+        <div class="insight-box warn-box" style="margin-top:1rem">
+          <strong>Counter-intuitive result:</strong> HCPs enrolled in Digital CME or high Sampling show <em>lower</em> average lift. This suggests either selection bias (lower-potential doctors receive more digital/sampling) or saturation/fatigue. Chemist POB and Advisory Board show the only positive directional lifts.
+        </div>
+      </div>
+    </div>
+
+    <!-- Qualitative Insights -->
+    <div class="section">
+      <h2>Qualitative Field Insights (Feedback Notes)</h2>
+      <div class="grid-2">
+        <div>
+          <h3 style="font-size:0.95rem; margin-bottom:0.5rem; color:var(--muted)">Dominant Themes</h3>
+          <ul style="font-size:0.9rem; padding-left:1.2rem">
+            <li><strong>Competitor pressure</strong> (Sun Pharma / Cipla) mentioned in ~12% of notes → associated with lower ΔTRx (4.2 vs 5.1)</li>
+            <li><strong>Price sensitivity & generic substitution</strong> frequent in Rural / Tier-2 narratives</li>
+            <li><strong>Stock-outs</strong> at Apollo / MedPlus reported in 49 notes — commercial execution risk</li>
+            <li><strong>Clinical receptivity</strong> (“receptive to trial evidence”, “requested extra kits”) linked to slightly higher lift (5.3)</li>
+            <li>Patient adherence app and formulary inclusion requests appear as engagement signals</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:0.95rem; margin-bottom:0.5rem; color:var(--muted)">Sentiment Proxy</h3>
+          <p style="font-size:0.9rem">Positive clinical signals (safety, tolerability, receptivity) outnumber pure competitive/price complaints ~1.5 : 1. However, competitive intensity remains a structural headwind for share gains.</p>
+          <div class="insight-box" style="margin-top:0.75rem">
+            Recommendation: Pair any future high-cost conference activity with mandatory competitive messaging and formulary support packages.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="section">
+      <h2>Strategic Recommendations for Budget Reallocation</h2>
+      <ul class="rec-list">
+        <li>
+          <span class="rec-num">1</span>
+          <div>
+            <strong>Slash / Cap Conference Sponsorship</strong><br>
+            Conference spend (₹8.33 Cr) is the dominant ROI destroyer. Limit to top 20–30 high-potential KOLs only, or convert majority of budget into lower-cost digital + field combinations. Target: reduce conference line by 60–70% in next cycle.
+          </div>
+        </li>
+        <li>
+          <span class="rec-num">2</span>
+          <div>
+            <strong>Prioritize Chemist POB + Selective Advisory Boards</strong><br>
+            These two channels showed the only positive incremental lift. Expand Chemist trade-margin programs in Rural & Tier-2 (higher response) and use Advisory Boards sparingly for true champions.
+          </div>
+        </li>
+        <li>
+          <span class="rec-num">3</span>
+          <div>
+            <strong>Re-engineer Digital CME & Sampling Targeting</strong><br>
+            Current broad enrollment correlates with lower lift — likely selection or saturation. Move to propensity-based targeting (high baseline TRx + receptive language in notes) and reduce sampling volume for non-responders.
+          </div>
+        </li>
+        <li>
+          <span class="rec-num">4</span>
+          <div>
+            <strong>Territory Rebalancing</strong><br>
+            Shift incremental budget toward Rural and Tier-2 where ΔTRx is higher. Metro currently absorbs disproportionate spend for weaker relative returns.
+          </div>
+        </li>
+        <li>
+          <span class="rec-num">5</span>
+          <div>
+            <strong>Address Stock-out & Competitive Friction</strong><br>
+            49 stock-out complaints and frequent Sun/Cipla mentions indicate supply-chain and competitive intelligence gaps. Integrate real-time chemist stock visibility into the next campaign design.
+          </div>
+        </li>
+        <li>
+          <span class="rec-num">6</span>
+          <div>
+            <strong>Next-Cycle KPI Focus: ROAS & CPRx</strong><br>
+            Primary KPI prioritized: <strong>Return on Ad Spend (ROAS)</strong>. Secondary: Cost per Incremental Prescription. Target next cycle ROAS ≥ 0.5× (still conservative given current baseline) by eliminating low-ROI conference spend and tightening targeting.
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Data Quality Note -->
+    <div class="section">
+      <h2>Data Cleaning Summary (Reproducibility)</h2>
+      <ul style="font-size:0.875rem; padding-left:1.2rem; color:var(--muted)">
+        <li>Deduplication: 6 duplicate HCP_IDs removed (kept first occurrence) → 494 unique HCPs</li>
+        <li>Dates: Mixed formats (ISO, DD/MM, MM-DD, Excel serials) standardized to YYYY-MM-DD</li>
+        <li>Specialties: 25 raw variants mapped → 6 standardized groups (Cardiology, Diabetology/Endocrinology, Neurology, Pulmonology, General Practice, Consulting Physician)</li>
+        <li>Currency: Stripped ₹/INR/commas; median imputation for missing expense lines</li>
+        <li>TRx: Removed “Rx”/“scripts” suffixes, filtered negatives & extreme outliers (e.g. 9999), median imputation by specialty</li>
+        <li>Channels: Multi-select strings one-hot encoded into 6 binary indicators</li>
+        <li>ROI formulae applied exactly as specified in case brief (TMI, ΔTRx, GIR, NIPL, ROMI%, ROAS, CPRx)</li>
+      </ul>
+      <p style="font-size:0.8rem; margin-top:0.75rem">Cleaned dataset: <code>Pharma_ROI_Cleaned.xlsx</code> | Full analysis reproducible in Python (pandas + numpy).</p>
+    </div>
+  </div>
+
+  <footer>
+    Pharma Commercial Analytics Capstone · Confidential · Generated 08 Sep 2026 · ROAS prioritized as primary ROI KPI
+  </footer>
+
+  <script>
+    // Spend Mix Doughnut
+    new Chart(document.getElementById('spendChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Conference Sponsorship', 'MR Detailing', 'Digital CME', 'Chemist POB', 'Sampling Kits'],
+        datasets: [{
+          data: [8.33, 0.94, 0.73, 0.62, 0.48],
+          backgroundColor: ['#dc2626', '#0f766e', '#0ea5e9', '#f59e0b', '#8b5cf6'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.label}: ₹${ctx.raw} Cr (${(ctx.raw/11.11*100).toFixed(0)}%)`
+            }
+          }
+        }
+      }
+    });
+
+    // Specialty bar (avg ΔTRx)
+    new Chart(document.getElementById('specChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Neurology', 'Pulmonology', 'Consulting Phys.', 'Diabetology/Endo', 'General Practice', 'Cardiology'],
+        datasets: [{
+          label: 'Avg Incremental TRx',
+          data: [6.12, 5.74, 5.92, 4.65, 4.55, 4.44],
+          backgroundColor: '#0f766e',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Δ TRx (Post – Pre)' } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  </script>
+</body>
+</html>
